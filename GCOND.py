@@ -17,6 +17,7 @@ class GCond():
         self.origin_features = origin_features
         self.origin_A = origin_A
         self.origin_labels = origin_labels
+        self.num_origin_features = self.origin_features.shape[1]
         self.num_origin_nodes = origin_features.shape[0]
         self.num_classes = args.num_classes
 
@@ -28,7 +29,7 @@ class GCond():
         assert self.num_syn_nodes >= self.num_classes, "The number of synthetic nodes is less than the number of classes"
 
         # num_syn_features == num_origin_features
-        self.num_syn_features = origin_features
+        self.num_syn_features = self.num_origin_features
 
 
 
@@ -38,13 +39,13 @@ class GCond():
         self.syn_adj = None # shape: [num_syn_nodes, num_syn_nodes]
         self.syn_labels = None # shape: [num_syn_nodes]
 
-        self.adj_mlp = adj_MLP(self.num_syn_features, self.num_hidden_features, out_features = 1, n_layers = args.nlayers)
+        self.adj_mlp = adj_MLP(self.num_syn_features, self.num_hidden_features, out_features = 1, num_nodes = self.num_syn_nodes, num_features = self.num_syn_features, n_layers = args.nlayers)
 
         self.init()
 
         assert list(self.syn_features.shape) == [self.num_syn_nodes, self.num_syn_features], "shape of synthetic features is wrong."
         assert list(self.syn_adj.shape) == [self.num_syn_nodes, self.num_syn_nodes], "shape of synthetic adj is wrong."
-        assert list(self.syn_adj.shape) == self.num_syn_nodes, "shape of synthetic labels is wrong."
+        assert self.syn_labels.shape[0] == self.num_syn_nodes, "shape of synthetic labels is wrong. syn: {}, labels: {}".format(self.syn_labels.shape, self.num_syn_nodes)
 
     def init(self):
         self.init_features()
@@ -53,7 +54,7 @@ class GCond():
 
     def init_features(self):
         # randomly initialize the node features
-        self.syn_features = torch.randn(self.num_syn_nodes, self.num_syn_nodes)
+        self.syn_features = torch.randn(self.num_syn_nodes, self.num_syn_features)
 
     def init_adj(self):
         self.syn_adj = self.adj_mlp(self.syn_features)
@@ -82,12 +83,12 @@ class GCond():
 #%%
 args = EasyDict(
     {
-        "num_origin_nodes": 100,
-        "num_origin_features": 3,
+        "num_origin_nodes": 2708,
+        "num_origin_features": 1433,
         "num_classes": 7,
 
-        "num_syn_nodes": 10,
-        "num_syn_features": 3,
+        "num_syn_nodes": 100,
+        "num_syn_features": 1433,
         "num_hidden_features": 128,
         "nlayers": 4,
 
@@ -115,10 +116,20 @@ graph = dataset[0]
 # %%
 x = graph.x
 edge_index = graph.edge_index
-y = graph.y
-
-
-# %%
-agent = GCond(x[1], torch.rand([len(x[0]), len(x[0])]), y, args)
+y:torch.Tensor = graph.y
 
 # %%
+labels = y.tolist()
+
+# %%
+agent = GCond(x, torch.rand([x.shape[0], x.shape[0]]), labels, args)
+
+# %%
+x.shape
+
+# %%
+x[0].shape
+x.shape[0]
+
+# %%
+

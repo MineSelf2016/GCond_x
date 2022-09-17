@@ -28,9 +28,13 @@ My implementation
 ```
 
 
-Wei's implem
+In paper:
 
+```python
 
+pass
+
+```
 
 
 

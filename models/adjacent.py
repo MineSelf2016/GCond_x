@@ -34,7 +34,7 @@ class adj_MLP(nn.Module):
         self.reset_param()
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        print("x.shape: ", x.shape)
+        # print("x.shape: ", x.shape)
         a_l = x.repeat(1, self.num_nodes).reshape(self.num_nodes, self.num_nodes, self.num_features)
 
         a_r = x.repeat(self.num_nodes, 1).reshape(self.num_nodes, self.num_nodes, self.num_features)
@@ -67,7 +67,7 @@ class adj_MLP(nn.Module):
         def weight_reset(m):
             if isinstance(m, nn.Linear):
                 nn.init.xavier_uniform_(m.weight, gain=nn.init.calculate_gain('relu'))
-                print("reset params")
+                # print("reset params")
             if isinstance(m, nn.BatchNorm1d):
                 # nn.init.xavier_uniform_(m.weight, gain=nn.init.calculate_gain('relu'))
                 m.reset_parameters()

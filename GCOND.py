@@ -1,15 +1,10 @@
 #%%
-import numpy as np 
-import pandas as pd 
-import matplotlib.pyplot as plt 
+import numpy as np
+from collections import Counter
 
-import torch 
+import torch
 import torch.nn as nn
-import torch.nn.functional as F
-
 from models.adjacent import adj_MLP
-from utils import *
-from easydict import EasyDict
 
 # %%
 class GCond():
@@ -26,12 +21,13 @@ class GCond():
         self.reduction_ratio = args.reduction_ratio
         self.num_syn_nodes = int(args.num_origin_nodes * self.reduction_ratio)
         
+        self.lr_origin_task = 0.01
+        self.lr_synthetic = 0.1
+
         assert self.num_syn_nodes >= self.num_classes, "The number of synthetic nodes is less than the number of classes"
 
         # num_syn_features == num_origin_features
         self.num_syn_features = self.num_origin_features
-
-
 
         self.num_hidden_features = args.num_hidden_features
 
@@ -54,13 +50,14 @@ class GCond():
 
     def init_features(self):
         # randomly initialize the node features
-        self.syn_features = torch.randn(self.num_syn_nodes, self.num_syn_features)
+        # use nn.Parameters to make it differentiable
+        self.syn_features = nn.parameter.Parameter(torch.randn(self.num_syn_nodes, self.num_syn_features, device = self.device))
 
     def init_adj(self):
         self.syn_adj = self.adj_mlp(self.syn_features)
 
     def init_labels(self) -> torch.Tensor:
-        cc = Counter(self.origin_labels)
+        cc = Counter(self.origin_labels.tolist())
         cc = {
             k: max(int(v / self.num_origin_nodes * self.num_syn_nodes), 1) for k, v in cc.items()
         }
@@ -79,57 +76,14 @@ class GCond():
 
         self.syn_labels = torch.tensor(syn_labels, device = self.device)
 
+    def forward_origin(self, x):
+        pass 
 
-#%%
-args = EasyDict(
-    {
-        "num_origin_nodes": 2708,
-        "num_origin_features": 1433,
-        "num_classes": 7,
 
-        "num_syn_nodes": 100,
-        "num_syn_features": 1433,
-        "num_hidden_features": 128,
-        "nlayers": 4,
+    def forward_synthetic(self, x):
+        pass 
 
-        "reduction_ratio": 0.1,
+    def contrast_gradient(self, x):
+        pass 
 
-        "device": "cpu"
-    }
-)
-
-# %%
-args
-
-#%%
-import os.path as osp
-from torch_geometric.datasets import Planetoid
-
-path = osp.join(osp.dirname(osp.realpath(__file__)), 'datasets', "Cora")
-
-#%%
-dataset = Planetoid(path, "Cora")
-
-# %%
-graph = dataset[0]
-
-# %%
-x = graph.x
-edge_index = graph.edge_index
-y:torch.Tensor = graph.y
-
-# %%
-labels = y.tolist()
-
-# %%
-agent = GCond(x, torch.rand([x.shape[0], x.shape[0]]), labels, args)
-
-# %%
-x.shape
-
-# %%
-x[0].shape
-x.shape[0]
-
-# %%
 

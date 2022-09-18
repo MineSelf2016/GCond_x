@@ -45,22 +45,3 @@ edge_index = torch.tensor([[0, 1, 1, 0, 2, 3],[0, 1, 2, 2, 3, 2]])
 edge_index =  to_dense_adj(edge_index).squeeze()
 
 edge_index
-
-#%%
-from gcn import GCN
-from torch_geometric.datasets import Planetoid
-import os.path as osp
-
-path = osp.join(osp.dirname(osp.realpath(__file__)), 'datasets', "Cora")
-dataset = Planetoid(path, "Cora")
-graph = dataset[0]
-
-#%%
-graph.edge_index
-
-
-#%%
-model = GCN(nfeat = 10, nhid = 128, nclass = 7, )
-
-
-# %%

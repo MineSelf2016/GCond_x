@@ -1,5 +1,4 @@
 #%%
-from symbol import parameters
 import numpy as np
 import pandas as pd 
 import matplotlib.pyplot as plt 
@@ -30,7 +29,7 @@ for i in range(20):
 y_o = y_o.to(torch.long)
 
 # %%
-# make the dataset differential
+# make the dataset differentiable
 x_s = nn.parameter.Parameter(torch.randn(num_s_data, num_s_features))
 a_s = None
 y_s = []
@@ -38,6 +37,22 @@ for i in range(5):
     y_s.extend([i] * 4)
 
 y_s = torch.tensor(y_s, dtype = torch.long)
+
+#%%
+def match_loss(gw_o, gw_s, device = "cpu"):
+    dist = torch.tensor(0.0).to(device)
+
+    vec_o = []
+    vec_s = []
+    for i in range(len(gw_o)):
+        vec_o.append(gw_o[i].reshape(-1))
+        vec_s.append(gw_s[i].reshape(-1))
+    vec_o = torch.cat(vec_o, dim = 0)
+    vec_s = torch.cat(vec_s, dim = 0)
+
+    dist = torch.sum((vec_o - vec_s) ** 2)
+
+    return dist
 
 # %%
 class MLP(nn.Module):
@@ -86,19 +101,54 @@ def test_accuracy(model, labels: torch.Tensor):
     
 #%%
 loss_fn = nn.CrossEntropyLoss()
-optim = torch.optim.SGD(model.parameters(), lr = 0.1)
+optim_model = torch.optim.SGD(model.parameters(), lr = 0.1)
+optim_feature = torch.optim.SGD([x_s], lr = 0.01)
 
 #%%
 model_parameters = list(model.parameters())
 
 #%%
-output = model(x_o)
-loss = loss_fn(output, y_o)
+output_o = model(x_o)
+loss_o = loss_fn(output_o, y_o)
 
-gw_o = torch.autograd.grad(loss, model_parameters, create_graph = True)
+gw_o = torch.autograd.grad(loss_o, model_parameters, create_graph = True)
+
+#%%
+output_s = model(x_s)
+loss_s = loss_fn(output_s, y_s)
+
+gw_s = torch.autograd.grad(loss_s, model_parameters, create_graph = True)
+
+#%%
+loss = match_loss(gw_o, gw_s)
+
+print(loss.item())
+
+optim_feature.zero_grad()
+loss.backward()
+
+optim_feature.step()
 
 
-print(model_parameters[0].grad.data)
+
+
+
+#%%
+for i, layer in enumerate(gw_o):
+    print(i, "th layer:")
+    print("shape: ", layer.shape)
+    print()
+
+#%%
+for i, layer in enumerate(gw_o):
+    print(i, "th layer:")
+    print("shape: ", layer.shape)
+    print()
+
+
+#%%
+
+
 
 
 #%%
